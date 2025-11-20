@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบค้นหาข้อมูลการเข้าเรียน - สกร.อ.เมืองนครราชสีมา</title>
+    
+    <!-- Font: TH Sarabun New (Sarabun from Google Fonts) -->
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- PapaParse for CSV Parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+    <!-- html2pdf.js for PDF Download -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .container {
+            max-width: 800px;
+            flex: 1; 
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- Search Screen Centering --- */
+        #searchScreen {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center; 
+            align-items: center;     
+            min-height: 80vh;        
+        }
+
+        /* --- Header Card --- */
+        .header-card {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 40px 20px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(30, 60, 114, 0.2);
+            margin-bottom: 30px;
+            position: relative;
+            overflow: hidden;
+            width: 100%; 
+        }
+
+        .header-card::before {
+            content: '';
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 150px;
+            height: 150px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+        }
+
+        .org-logo {
+            width: 110px;
+            height: auto;
+            margin-bottom: 15px;
+            filter: drop-shadow(0 4px 4px rgba(0,0,0,0.2));
+            background: rgba(255, 255, 255, 0.9); 
+            padding: 10px;
+            border-radius: 50%;
+        }
+
+        .app-title {
+            font-weight: 700;
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .org-name {
+            font-weight: 400;
+            font-size: 1.3rem;
+            margin-bottom: 25px;
+            opacity: 0.9;
+        }
+
+        /* --- Search Box --- */
+        .search-box {
+            background: white;
+            padding: 8px;
+            border-radius: 50px;
+            display: flex;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .search-input {
+            border: none;
+            flex-grow: 1;
+            padding: 10px 25px;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            outline: none;
+            color: #333;
+            font-family: 'Sarabun', sans-serif;
+        }
+
+        .btn-search {
+            background-color: #2a5298;
+            color: white;
+            border-radius: 50px;
+            padding: 10px 30px;
+            font-weight: 600;
+            border: none;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .btn-search:hover {
+            background-color: #1e3c72;
+            transform: translateY(-2px);
+        }
+
+        /* --- Result Cards --- */
+        .result-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+            border: none;
+            overflow: hidden;
+            animation: fadeInUp 0.5s ease;
+        }
+
+        .card-title-blue {
+            color: #1e3c72;
+            font-weight: 700;
+            border-left: 5px solid #1e3c72;
+            padding-left: 15px;
+            margin-bottom: 20px;
+            font-size: 1.4rem;
+        }
+
+        .card-title-green {
+            color: #198754;
+            font-weight: 700;
+            border-left: 5px solid #198754;
+            padding-left: 15px;
+            margin-bottom: 20px;
+            font-size: 1.4rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Student Info Grid Style - Adjusted */
+        .student-row {
+            display: flex;
+            border-bottom: 1px dashed #e0e0e0;
+            padding: 10px 0; 
+            font-size: 1.15rem;
+            margin-right: 15px;
+            align-items: flex-start;
+        }
+        .student-label {
+            min-width: 130px; 
+            font-weight: 600;
+            color: #555;
+            flex-shrink: 0;
+        }
+        .student-val {
+            color: #212529;
+            font-weight: 500;
+            white-space: normal; 
+            word-break: break-word;
+            line-height: 1.5; 
+        }
+        
+        /* Name Header Style */
+        .student-name-header {
+            font-size: 1.8rem;
+            color: #1e3c72;
+            font-weight: 700;
+            border-bottom: 2px solid #f0f2f5;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        /* Buttons */
+        .action-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .btn-back {
+            background: transparent;
+            border: 1px solid #ccc;
+            color: #555;
+            border-radius: 30px;
+            padding: 8px 20px;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+        }
+        .btn-back:hover {
+            background: #e9ecef;
+            color: #333;
+        }
+
+        .btn-pdf {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            padding: 8px 20px;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+        }
+        .btn-pdf:hover { background-color: #b02a37; color: white; transform: translateY(-2px); }
+
+        .btn-print {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            padding: 8px 20px;
+            font-size: 0.95rem;
+            margin-right: 10px;
+            transition: all 0.3s;
+        }
+        .btn-print:hover { background-color: #5a6268; color: white; transform: translateY(-2px); }
+
+        /* Realtime Pulse Indicator */
+        .live-indicator {
+            font-size: 0.9rem;
+            color: #dc3545;
+            display: flex;
+            align-items: center;
+            font-weight: 500;
+        }
+        .pulse-dot {
+            width: 10px;
+            height: 10px;
+            background-color: #dc3545;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+            70% { box-shadow: 0 0 0 6px rgba(220, 53, 69, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 20px 0;
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-top: auto;
+            border-top: 1px solid #eee;
+            background: #fff;
+            width: 100%;
+        }
+
+        /* Table */
+        .table th { background-color: #f8f9fa !important; color: #495057; }
+        .table td { vertical-align: middle; font-size: 1.05rem; }
+
+        /* Status Badges */
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+        .status-present { background-color: #d1e7dd; color: #0f5132; }
+        .status-late { background-color: #fff3cd; color: #856404; }
+        .status-absent { background-color: #f8d7da; color: #721c24; }
+        .status-leave { background-color: #cff4fc; color: #055160; }
+
+        /* Header for Print/PDF (Hidden by default) */
+        #printHeader {
+            display: none;
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 20px;
+        }
+        #printHeader img { width: 80px; margin-bottom: 10px; }
+        #printHeader h3 { font-size: 1.4rem; margin: 0; color: #333; }
+        #printHeader h4 { font-size: 1.1rem; color: #666; font-weight: normal; margin-top: 5px;}
+
+        /* Loading & Error */
+        #loading { display: none; text-align: center; margin: 40px auto; }
+        .error-msg { display: none; color: #ff4d4d; background: rgba(255,255,255,0.2); padding: 10px; border-radius: 8px; margin-top: 15px; }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Print Media Query */
+        @media print {
+            body * { visibility: hidden; }
+            #resultScreen, #resultScreen * { visibility: visible; }
+            #resultScreen { position: absolute; left: 0; top: 0; width: 100%; }
+            .action-bar { display: none !important; } 
+            #printHeader { display: block !important; } 
+            .result-card { box-shadow: none; border: 1px solid #ddd; }
+            .footer { display: none; } 
+            .col-md-6 { width: 50% !important; float: left; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <!-- SEARCH SCREEN (Centered) -->
+        <div id="searchScreen">
+            <div class="header-card">
+                <img src="https://img2.pic.in.th/pic/logo-.ca04c41e1e7913a7.png" alt="logo" class="org-logo">
+                <h1 class="app-title">ระบบตรวจสอบข้อมูลการเข้าเรียน</h1>
+                <h2 class="org-name">ปวช. ศูนย์ส่งเสริมการเรียนรู้ระดับอำเภอเมืองนครราชสีมา</h2>
+                
+                <div class="search-box">
+                    <input type="text" id="studentIdInput" class="search-input" placeholder="กรอกรหัสนักศึกษา..." onkeypress="handleEnter(event)">
+                    <button class="btn-search" onclick="searchData()">
+                        <i class="fas fa-search me-2"></i>ค้นหา
+                    </button>
+                </div>
+                <div id="errorMessage" class="error-msg"></div>
+            </div>
+        </div>
+
+        <!-- LOADING -->
+        <div id="loading">
+            <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2 text-muted">กำลังเชื่อมต่อฐานข้อมูล...</p>
+        </div>
+
+        <!-- RESULT SCREEN -->
+        <div id="resultScreen" style="display: none; margin-top: 40px;">
+            
+            <!-- Header Only for Print/PDF -->
+            <div id="printHeader">
+                <img src="https://img2.pic.in.th/pic/logo-.ca04c41e1e7913a7.png" alt="logo">
+                <h3>รายงานข้อมูลการเข้าเรียน</h3>
+                <h4>ปวช. ศูนย์ส่งเสริมการเรียนรู้ระดับอำเภอเมืองนครราชสีมา</h4>
+            </div>
+
+            <!-- Action Bar -->
+            <div class="action-bar">
+                <button class="btn btn-back" onclick="goBack()">
+                    <i class="fas fa-arrow-left me-2"></i> ค้นหาใหม่
+                </button>
+                <div class="d-flex">
+                    <button class="btn btn-print" onclick="printData()">
+                        <i class="fas fa-print me-2"></i>พิมพ์
+                    </button>
+                    <button class="btn btn-pdf" onclick="downloadPDF()">
+                        <i class="fas fa-file-pdf me-2"></i>ดาวน์โหลด PDF
+                    </button>
+                </div>
+            </div>
+
+            <!-- Info Card -->
+            <div class="result-card p-4">
+                <h4 class="card-title-blue"><i class="fas fa-user-graduate me-2"></i>ข้อมูลนักศึกษา</h4>
+                
+                <!-- ชื่อ นามสกุล อยู่ตรงกลาง -->
+                <div class="student-name-header" id="disp_name">
+                    -
+                </div>
+                
+                <!-- Grid ข้อมูล 2 คอลัมน์ -->
+                <div class="row" id="infoGrid">
+                    <!-- ข้อมูลจะถูกสร้างที่นี่ด้วย JS -->
+                </div>
+
+            </div>
+
+            <!-- History Card -->
+            <div class="result-card p-4">
+                <h4 class="card-title-green">
+                    <span><i class="fas fa-history me-2"></i>ประวัติการเข้าเรียน</span>
+                    <span class="live-indicator">
+                        <div class="pulse-dot"></div> Real-time
+                    </span>
+                </h4>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>วัน-เวลา</th>
+                                <th>สถานะ</th>
+                                <th>หมายเหตุ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendanceTableBody">
+                            <!-- Rows -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="noAttendanceMsg" class="text-center text-muted mt-4" style="display:none;">
+                    ยังไม่มีข้อมูลการบันทึกเวลา
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        © 2025 พัฒนาโดย : ศูนย์ส่งเสริมการเรียนรู้ระดับอำเภอเมืองนครราชสีมา
+    </footer>
+
+    <script>
+        // --- Config ---
+        const SHEET_ID = '1Orfk2n0UsL88HYAsqf_9dwXJ-0EaEEvkKQ_zKfNaJsY'; 
+        const SHEET_NAME_STUDENTS = 'Students'; 
+        const SHEET_NAME_ATTENDANCE = 'Attendance';
+        
+        let realtimeInterval; 
+
+        function handleEnter(e) {
+            if (e.key === 'Enter') searchData();
+        }
+
+        function goBack() {
+            stopRealtimeUpdates(); 
+            document.getElementById('resultScreen').style.display = 'none';
+            document.getElementById('searchScreen').style.display = 'flex';
+            document.getElementById('studentIdInput').value = '';
+            document.getElementById('errorMessage').style.display = 'none';
+        }
+
+        function printData() {
+            window.print();
+        }
+
+        function downloadPDF() {
+            const element = document.getElementById('resultScreen');
+            const header = document.getElementById('printHeader');
+            const actions = document.querySelector('.action-bar');
+            const footer = document.querySelector('.footer');
+
+            header.style.display = 'block'; 
+            actions.style.display = 'none'; 
+            footer.style.display = 'none'; 
+            
+            const opt = {
+                margin: 10,
+                filename: 'ประวัติการเข้าเรียน.pdf', // PDF filename generic
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 }, 
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().set(opt).from(element).save().then(() => {
+                header.style.display = 'none';
+                actions.style.display = 'flex';
+                footer.style.display = 'block';
+            });
+        }
+
+        function startRealtimeUpdates(studentId) {
+            stopRealtimeUpdates(); 
+            
+            realtimeInterval = setInterval(async () => {
+                try {
+                    const attendanceData = await fetchSheetData(SHEET_NAME_ATTENDANCE);
+                    const studentAttendance = filterAttendance(attendanceData, studentId);
+                    renderAttendanceTable(studentAttendance);
+                } catch (err) {
+                    console.warn('Auto-refresh skipped due to error:', err);
+                }
+            }, 5000); 
+        }
+
+        function stopRealtimeUpdates() {
+            if (realtimeInterval) {
+                clearInterval(realtimeInterval);
+                realtimeInterval = null;
+            }
+        }
+
+        async function searchData() {
+            const studentId = document.getElementById('studentIdInput').value.trim();
+            const errorDiv = document.getElementById('errorMessage');
+            const searchScreen = document.getElementById('searchScreen');
+            const resultScreen = document.getElementById('resultScreen');
+            const loading = document.getElementById('loading');
+
+            errorDiv.style.display = 'none';
+            
+            if (!studentId) {
+                errorDiv.innerText = 'กรุณากรอกรหัสนักศึกษา';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            searchScreen.style.display = 'none';
+            loading.style.display = 'block';
+
+            try {
+                const studentsData = await fetchSheetData(SHEET_NAME_STUDENTS);
+                const studentRow = findStudent(studentsData, studentId);
+
+                if (!studentRow) {
+                    loading.style.display = 'none';
+                    searchScreen.style.display = 'flex';
+                    errorDiv.innerText = `ไม่พบรหัสนักศึกษา: ${studentId}`;
+                    errorDiv.style.display = 'block';
+                    return;
+                }
+
+                const attendanceData = await fetchSheetData(SHEET_NAME_ATTENDANCE);
+                const studentAttendance = filterAttendance(attendanceData, studentId);
+
+                renderStudentInfo(studentRow);
+                renderAttendanceTable(studentAttendance);
+
+                loading.style.display = 'none';
+                resultScreen.style.display = 'block';
+                
+                startRealtimeUpdates(studentId);
+
+            } catch (err) {
+                console.error(err);
+                loading.style.display = 'none';
+                searchScreen.style.display = 'flex';
+                errorDiv.innerText = 'เกิดข้อผิดพลาดในการเชื่อมต่อ (Network Error)';
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        function fetchSheetData(sheetName) {
+            return new Promise((resolve, reject) => {
+                const timestamp = new Date().getTime();
+                const googleUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}&_t=${timestamp}`;
+                const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(googleUrl) + '&cb=' + timestamp;
+                
+                Papa.parse(proxyUrl, {
+                    download: true,
+                    header: true, 
+                    complete: (results) => resolve(results.data),
+                    error: (err) => {
+                        console.warn("Proxy failed, retrying direct...", err);
+                        Papa.parse(googleUrl, {
+                            download: true,
+                            header: true,
+                            complete: (res) => resolve(res.data),
+                            error: (e) => reject(e)
+                        });
+                    }
+                });
+            });
+        }
+
+        function findStudent(data, id) {
+            if (!data || data.length === 0) return null;
+            const keys = Object.keys(data[0]);
+            let idKey = keys.find(k => k.toLowerCase().includes('รหัส') || k.toLowerCase().includes('id') || k.toLowerCase().includes('code')) || keys[0];
+            return data.find(row => row[idKey] && row[idKey].toString().trim() === id);
+        }
+
+        function filterAttendance(data, id) {
+            if (!data || data.length === 0) return [];
+            const keys = Object.keys(data[0]);
+            let idKey = keys.find(k => k.toLowerCase().includes('รหัส') || k.toLowerCase().includes('id') || k.toLowerCase().includes('code')) || keys[1]; 
+            return data.filter(row => row[idKey] && row[idKey].toString().trim() === id);
+        }
+
+        function renderStudentInfo(student) {
+            const keys = Object.keys(student);
+            const findKey = (keywords) => keys.find(k => keywords.some(w => k.toLowerCase().includes(w)));
+
+            // หา Key ชื่อ (เพื่อแยกไปแสดงตรงกลาง)
+            const nameKey = findKey(['ชื่อ', 'name', 'full']) || keys[1];
+
+            // แสดงชื่อตรงกลาง
+            document.getElementById('disp_name').innerText = student[nameKey] || '-';
+
+            // สร้าง Grid สำหรับข้อมูลที่เหลือ (รวมรหัสด้วย)
+            const grid = document.getElementById('infoGrid');
+            grid.innerHTML = '';
+
+            // วนลูปสร้าง element สำหรับข้อมูลอื่นๆ
+            keys.forEach(key => {
+                // ข้าม key ที่เป็นชื่อ เพราะแสดงไปแล้ว
+                if (key !== nameKey && student[key]) {
+                    const div = document.createElement('div');
+                    div.className = 'col-md-6'; // แบ่งเป็น 2 คอลัมน์
+                    div.innerHTML = `
+                        <div class="student-row">
+                            <span class="student-label">${key}:</span>
+                            <span class="student-val">${student[key]}</span>
+                        </div>
+                    `;
+                    grid.appendChild(div);
+                }
+            });
+        }
+
+        function renderAttendanceTable(attendanceList) {
+            const tbody = document.getElementById('attendanceTableBody');
+            const noMsg = document.getElementById('noAttendanceMsg');
+            tbody.innerHTML = '';
+
+            if (!attendanceList || attendanceList.length === 0) {
+                noMsg.style.display = 'block';
+                return;
+            }
+            
+            noMsg.style.display = 'none';
+            
+            const keys = Object.keys(attendanceList[0]);
+            const findKey = (keywords) => keys.find(k => keywords.some(w => k.toLowerCase().includes(w)));
+
+            const dateKey = findKey(['เวลา', 'date', 'time', 'timestamp']) || keys[0];
+            const statusKey = findKey(['สถานะ', 'status', 'type', 'check']) || keys[2] || keys[keys.length-1]; 
+            const reasonKey = findKey(['เหตุผล', 'reason', 'remark', 'หมายเหตุ']) || ''; 
+
+            attendanceList.sort((a, b) => new Date(b[dateKey]) - new Date(a[dateKey]));
+
+            attendanceList.forEach(row => {
+                const tr = document.createElement('tr');
+                
+                let statusHtml = '-';
+                if (row[statusKey]) {
+                    const val = row[statusKey];
+                    let badgeClass = 'bg-light border'; 
+                    
+                    if (val.includes('มา') || val.includes('ปกติ') || val.includes('Present')) badgeClass = 'status-present';
+                    else if (val.includes('สาย') || val.includes('Late')) badgeClass = 'status-late';
+                    else if (val.includes('ขาด') || val.includes('Absent')) badgeClass = 'status-absent';
+                    else if (val.includes('ลา') || val.includes('Leave')) badgeClass = 'status-leave';
+                    
+                    statusHtml = `<span class="status-badge ${badgeClass}">${val}</span>`;
+                }
+
+                tr.innerHTML = `
+                    <td><i class="far fa-clock text-muted me-1"></i> ${row[dateKey] || '-'}</td>
+                    <td>${statusHtml}</td>
+                    <td>${reasonKey && row[reasonKey] ? row[reasonKey] : '-'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+    </script>
+</body>
+</html>
