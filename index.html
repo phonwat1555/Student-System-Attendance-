@@ -412,6 +412,7 @@
                     <table class="table table-hover">
                         <thead>
                             <tr>
+                                <th style="width: 60px;">ลำดับ</th>
                                 <th>วัน-เวลา</th>
                                 <th>สถานะ</th>
                                 <th>หมายเหตุ</th>
@@ -642,9 +643,10 @@
             const statusKey = findKey(['สถานะ', 'status', 'type', 'check']) || keys[2] || keys[keys.length-1]; 
             const reasonKey = findKey(['เหตุผล', 'reason', 'remark', 'หมายเหตุ']) || ''; 
 
-            attendanceList.sort((a, b) => new Date(b[dateKey]) - new Date(a[dateKey]));
+            // เรียงลำดับ: เก่า -> ใหม่ (Ascending)
+            attendanceList.sort((a, b) => new Date(a[dateKey]) - new Date(b[dateKey]));
 
-            attendanceList.forEach(row => {
+            attendanceList.forEach((row, index) => {
                 const tr = document.createElement('tr');
                 
                 let statusHtml = '-';
@@ -661,6 +663,7 @@
                 }
 
                 tr.innerHTML = `
+                    <td class="text-center text-muted">${index + 1}</td>
                     <td><i class="far fa-clock text-muted me-1"></i> ${row[dateKey] || '-'}</td>
                     <td>${statusHtml}</td>
                     <td>${reasonKey && row[reasonKey] ? row[reasonKey] : '-'}</td>
