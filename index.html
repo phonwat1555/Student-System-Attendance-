@@ -72,30 +72,6 @@
             border-radius: 50%;
         }
 
-        /* ปุ่มกลับหน้าหลัก บน Header */
-        .btn-home-top {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            color: rgba(255, 255, 255, 0.9);
-            text-decoration: none;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            transition: all 0.3s;
-            z-index: 100;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 5px 15px;
-            border-radius: 20px;
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        .btn-home-top:hover {
-            background: rgba(255, 255, 255, 0.25);
-            color: white;
-            transform: translateY(-2px);
-        }
-
         .org-logo {
             width: 110px;
             height: auto;
@@ -247,25 +223,6 @@
             color: #333;
         }
 
-        .btn-home-small {
-            background: white;
-            border: 1px solid #ccc;
-            color: #555;
-            border-radius: 50%;
-            width: 42px;
-            height: 42px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s;
-            text-decoration: none;
-        }
-        .btn-home-small:hover {
-            background: #e9ecef;
-            color: #1e3c72;
-            transform: translateY(-2px);
-        }
-
         .btn-pdf {
             background-color: #dc3545;
             color: white;
@@ -380,11 +337,6 @@
         <!-- SEARCH SCREEN (Centered) -->
         <div id="searchScreen">
             <div class="header-card">
-                <!-- ปุ่มกลับหน้าหลัก LinkHub -->
-                <a href="https://phonwat1555.github.io/LinkHub_NakhonRatchasima/" class="btn-home-top">
-                    <i class="fas fa-home me-2"></i> หน้าหลัก
-                </a>
-
                 <img src="https://img2.pic.in.th/pic/logo-.ca04c41e1e7913a7.png" alt="logo" class="org-logo">
                 <h1 class="app-title">ตรวจสอบข้อมูลการเข้าเรียน</h1>
                 <h2 class="org-name">ปวช. ศูนย์ส่งเสริมการเรียนรู้ระดับอำเภอเมืองนครราชสีมา</h2>
@@ -419,15 +371,9 @@
 
             <!-- Action Bar -->
             <div class="action-bar">
-                <div class="d-flex gap-2 align-items-center">
-                    <!-- ปุ่ม Home เล็กๆ ในหน้ารายงาน -->
-                    <a href="https://phonwat1555.github.io/LinkHub_NakhonRatchasima/" class="btn-home-small" title="กลับหน้าหลัก">
-                        <i class="fas fa-home"></i>
-                    </a>
-                    <button class="btn btn-back" onclick="goBack()">
-                        <i class="fas fa-arrow-left me-2"></i> ค้นหาใหม่
-                    </button>
-                </div>
+                <button class="btn btn-back" onclick="goBack()">
+                    <i class="fas fa-arrow-left me-2"></i> ค้นหาใหม่
+                </button>
                 <div class="d-flex">
                     <button class="btn btn-print" onclick="printData()">
                         <i class="fas fa-print me-2"></i>พิมพ์
